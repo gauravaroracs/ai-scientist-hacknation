@@ -1,0 +1,207 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg:             #f8fafc;
+  --surface:        #ffffff;
+  --surface2:       #f1f5f9;
+  --border:         #e2e8f0;
+  --accent:         #1d4ed8;
+  --accent-light:   #eff6ff;
+  --teal:           #0891b2;
+  --teal-light:     #ecfeff;
+  --success:        #059669;
+  --success-light:  #ecfdf5;
+  --warning:        #d97706;
+  --warning-light:  #fffbeb;
+  --danger:         #dc2626;
+  --danger-light:   #fef2f2;
+  --ink:            #0f172a;
+  --body:           #334155;
+  --muted:          #64748b;
+  --border-radius:  6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* ── Scrollbar ───────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; }
+::-webkit-scrollbar-track  { background: var(--surface2); }
+::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ── Subtle dot grid background ──────────────────────── */
+.dot-bg {
+  background-color: var(--bg);
+  background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ── Card ────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.card-hover {
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.card-hover:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  border-color: #cbd5e1;
+}
+
+/* ── Input ───────────────────────────────────────────── */
+.sci-input {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--border-radius);
+  color: var(--ink);
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 1rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  width: 100%;
+}
+.sci-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(29,78,216,0.12);
+}
+.sci-input::placeholder { color: var(--muted); }
+
+/* ── Buttons ─────────────────────────────────────────── */
+.btn-primary {
+  background: var(--accent);
+  color: #ffffff;
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+  letter-spacing: 0.01em;
+}
+.btn-primary:hover   { background: #1e40af; box-shadow: 0 4px 12px rgba(29,78,216,0.3); }
+.btn-primary:active  { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+
+.btn-outline {
+  background: transparent;
+  color: var(--accent);
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 1.5px solid var(--accent);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-outline:hover { background: var(--accent-light); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.btn-ghost:hover { border-color: #94a3b8; color: var(--body); background: var(--surface2); }
+
+/* ── Tab ─────────────────────────────────────────────── */
+.tab-active   { color: var(--accent); border-bottom: 2px solid var(--accent); font-weight: 600; }
+.tab-inactive { color: var(--muted);  border-bottom: 2px solid transparent; }
+.tab-inactive:hover { color: var(--body); }
+
+/* ── Step connector ──────────────────────────────────── */
+.step-connector {
+  width: 1.5px;
+  background: var(--border);
+  flex-shrink: 0;
+  margin-left: 15px;
+}
+
+/* ── Loading bar ─────────────────────────────────────── */
+@keyframes loadBar {
+  0%   { width: 0%; opacity: 1; }
+  80%  { width: 90%; opacity: 1; }
+  100% { width: 100%; opacity: 0; }
+}
+.load-bar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--teal));
+  animation: loadBar 1.8s ease-in-out forwards;
+  z-index: 9999;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ── Fade animations ─────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.stagger > * {
+  opacity: 0;
+  animation: fadeUp 0.5s ease forwards;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger > *:nth-child(2) { animation-delay: 0.12s; }
+.stagger > *:nth-child(3) { animation-delay: 0.20s; }
+.stagger > *:nth-child(4) { animation-delay: 0.28s; }
+.stagger > *:nth-child(5) { animation-delay: 0.36s; }
+.stagger > *:nth-child(6) { animation-delay: 0.44s; }
+
+.animate-fade-in { animation: fadeIn 0.3s ease forwards; }
+
+/* ── Protocol step ───────────────────────────────────── */
+@keyframes stepIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.step-item {
+  opacity: 0;
+  animation: stepIn 0.35s ease forwards;
+}
+
+/* ── Divider ─────────────────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+/* ── Badge ───────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1px solid;
+}
