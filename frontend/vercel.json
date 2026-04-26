@@ -21,6 +21,10 @@
       "destination": "https://ai-scientist-hacknation-production.up.railway.app/email-quote"
     },
     {
+      "source": "/api/chat",
+      "destination": "https://ai-scientist-hacknation-production.up.railway.app/chat"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
