@@ -708,7 +708,7 @@ export default function QCPage() {
   const handleProceed = async () => {
     setLoading(true); setError(''); setStage(''); setProgress(0)
     try {
-      const res = await fetch('http://localhost:8000/generate-plan/stream', {
+      const res = await fetch('/generate-plan/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question, literature_context: qcResult.context_summary || '', references: qcResult.references || [] }),
