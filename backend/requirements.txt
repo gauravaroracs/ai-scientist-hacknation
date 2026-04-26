@@ -13,3 +13,6 @@ pydantic==2.10.3
 
 # Supabase (feedback store + pgvector)
 supabase==2.10.0
+
+# Email
+resend==2.5.2

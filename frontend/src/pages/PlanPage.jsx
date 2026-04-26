@@ -362,7 +362,7 @@ function MaterialsTab({ materials, question, onCorrection, onEmailResult, onMate
   const handleEmailQuote = async () => {
     setEmailSending(true)
     try {
-      const res = await fetch('/email-quote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ supplier: local[0]?.supplier ?? 'Supplier', materials: local, experiment_question: question }) })
+      const res = await fetch('/email-quote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ supplier: local[0]?.supplier ?? 'Supplier', materials: local, experiment_question: question, to_email: SUPPLIER_EMAIL }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.detail || 'Unknown error')
       onEmailResult(true, 'Email sent successfully')
