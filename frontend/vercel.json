@@ -1,0 +1,28 @@
+{
+  "rewrites": [
+    {
+      "source": "/literature-qc",
+      "destination": "https://ai-scientist-hacknation-production.up.railway.app/literature-qc"
+    },
+    {
+      "source": "/generate-plan/stream",
+      "destination": "https://ai-scientist-hacknation-production.up.railway.app/generate-plan/stream"
+    },
+    {
+      "source": "/feedback",
+      "destination": "https://ai-scientist-hacknation-production.up.railway.app/feedback"
+    },
+    {
+      "source": "/compare-material",
+      "destination": "https://ai-scientist-hacknation-production.up.railway.app/compare-material"
+    },
+    {
+      "source": "/email-quote",
+      "destination": "https://ai-scientist-hacknation-production.up.railway.app/email-quote"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
