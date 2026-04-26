@@ -1,5 +1,5 @@
 # LabProcure
-### From Hypothesis to Runnable Experiment by Voice and Chat
+### From Hypothesis to Runnable Experiment with protocol design and lab procurement via Voice and Chat
 
 > Built for Hack-Nation 2026
 
