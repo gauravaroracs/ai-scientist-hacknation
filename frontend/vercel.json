@@ -1,0 +1,40 @@
+{
+  "rewrites": [
+    {
+      "source": "/literature-qc",
+      "destination": "https://ai-scientist-hacknation-production.up.railway.app/literature-qc"
+    },
+    {
+      "source": "/generate-plan/stream",
+      "destination": "https://ai-scientist-hacknation-production.up.railway.app/generate-plan/stream"
+    },
+    {
+      "source": "/generate-plan",
+      "destination": "https://ai-scientist-hacknation-production.up.railway.app/generate-plan"
+    },
+    {
+      "source": "/feedback",
+      "destination": "https://ai-scientist-hacknation-production.up.railway.app/feedback"
+    },
+    {
+      "source": "/compare-material",
+      "destination": "https://ai-scientist-hacknation-production.up.railway.app/compare-material"
+    },
+    {
+      "source": "/email-quote",
+      "destination": "https://ai-scientist-hacknation-production.up.railway.app/email-quote"
+    },
+    {
+      "source": "/voice-session",
+      "destination": "https://ai-scientist-hacknation-production.up.railway.app/voice-session"
+    },
+    {
+      "source": "/api/chat",
+      "destination": "https://ai-scientist-hacknation-production.up.railway.app/chat"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
