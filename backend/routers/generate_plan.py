@@ -13,6 +13,7 @@ from services.planner import (
     generate_budget_timeline_validation,
 )
 from services.feedback import get_relevant_corrections, format_corrections_for_prompt
+from services.prices import enrich_materials_with_prices
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -54,11 +55,17 @@ async def generate_plan_stream(body: GeneratePlanRequest):
             )
             logger.info("Protocol generated: %d steps", len(protocol))
 
-            # Stage 3 — materials
-            yield _sse({"stage": "Selecting reagents and catalog numbers…", "pct": 45})
+            # Stage 3 — materials (LLM-generated catalog numbers + initial prices)
+            yield _sse({"stage": "Selecting reagents and catalog numbers…", "pct": 40})
             await asyncio.sleep(0)
-            materials = await _run(generate_materials, body.question, protocol, corrections_block)
-            logger.info("Materials generated: %d items", len(materials))
+            materials_raw = await _run(generate_materials, body.question, protocol, corrections_block)
+            logger.info("Materials generated: %d items", len(materials_raw))
+
+            # Stage 3.5 — price enrichment (cache → Tavily → LLM fallback)
+            yield _sse({"stage": "Verifying reagent prices…", "pct": 55})
+            await asyncio.sleep(0)
+            materials = await enrich_materials_with_prices(materials_raw)
+            logger.info("Prices enriched")
 
             # Stage 4 — budget / timeline / validation
             yield _sse({"stage": "Estimating budget, timeline and validation criteria…", "pct": 70})
@@ -78,7 +85,7 @@ async def generate_plan_stream(body: GeneratePlanRequest):
                 **btv,
             }
 
-            yield _sse({"stage": "done", "pct": 100, "plan": plan})
+            yield _sse({"stage": "done", "pct": 100, "plan": plan, "corrections_applied": len(corrections)})
 
         except Exception as exc:
             logger.error("Streaming plan generation failed: %s", exc, exc_info=True)
