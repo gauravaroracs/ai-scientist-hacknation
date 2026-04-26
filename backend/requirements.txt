@@ -15,4 +15,4 @@ pydantic==2.10.3
 supabase==2.10.0
 
 # Email
-resend==2.5.2
+resend==2.29.0
