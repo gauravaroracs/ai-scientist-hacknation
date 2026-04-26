@@ -73,9 +73,12 @@ function ProtocolStepper({ steps, question, onCorrection }) {
 
   return (
     <div className="flex flex-col gap-1">
-      {local.map((step, i) => {
-        const isActive = active === i
-        const isDone   = i < active
+      {local.map((item, i) => {
+        // Support both legacy string steps and new { step, citations } objects
+        const stepText  = typeof item === 'string' ? item : item.step
+        const citations = typeof item === 'string' ? [] : (item.citations || [])
+        const isActive  = active === i
+        const isDone    = i < active
         return (
           <div
             key={i}
@@ -119,8 +122,19 @@ function ProtocolStepper({ steps, question, onCorrection }) {
                   whiteSpace: isActive ? 'normal' : 'nowrap',
                 }}
               >
-                {isActive ? `Step ${i + 1}` : step}
+                {isActive ? `Step ${i + 1}` : stepText}
               </span>
+
+              {/* Citation count badge */}
+              {citations.length > 0 && !isActive && (
+                <span
+                  className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0"
+                  style={{ background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid #bfdbfe' }}
+                  title="Has citations"
+                >
+                  [{citations.length}]
+                </span>
+              )}
 
               {/* Chevron */}
               <svg
@@ -141,21 +155,48 @@ function ProtocolStepper({ steps, question, onCorrection }) {
             {isActive && (
               <div className="px-4 pb-4 pt-0 border-t" style={{ borderColor: '#bfdbfe' }}>
                 <InlineEdit
-                  originalText={step}
+                  originalText={stepText}
                   question={question}
                   category="protocol"
                   itemLabel={`Step ${i + 1}`}
                   onSaved={(corrected) => {
                     const updated = [...local]
-                    updated[i] = corrected
+                    updated[i] = typeof item === 'string' ? corrected : { ...item, step: corrected }
                     setLocal(updated)
                     onCorrection()
                   }}
                 >
                   <p className="font-sans text-sm leading-relaxed pt-3 pr-8" style={{ color: 'var(--body)' }}>
-                    {step}
+                    {stepText}
                   </p>
                 </InlineEdit>
+
+                {/* Citations */}
+                {citations.length > 0 && (
+                  <div className="mt-3 pt-3 border-t flex flex-col gap-1.5" style={{ borderColor: 'var(--border)' }}>
+                    <p className="font-sans text-xs font-600 uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+                      References
+                    </p>
+                    {citations.map((url, ci) => (
+                      <a
+                        key={ci}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 font-sans text-xs break-all hover:underline"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        <span
+                          className="flex-shrink-0 font-mono px-1 py-0.5 rounded text-xs"
+                          style={{ background: 'var(--accent-light)', border: '1px solid #bfdbfe' }}
+                        >
+                          [{ci + 1}]
+                        </span>
+                        {url}
+                      </a>
+                    ))}
+                  </div>
+                )}
                 <div className="flex gap-2 mt-4">
                   {i > 0 && (
                     <button onClick={() => setActive(i - 1)} className="btn-ghost px-3 py-1 text-xs rounded">
@@ -182,87 +223,187 @@ function ProtocolStepper({ steps, question, onCorrection }) {
   )
 }
 
+// ── Budget helpers ─────────────────────────────────────────────────────────────
+
+function SummaryCard({ label, value, sub, accent }) {
+  return (
+    <div
+      className="card px-3 py-3 flex flex-col gap-0.5"
+      style={{ borderColor: accent ? '#bfdbfe' : 'var(--border)', background: accent ? 'var(--accent-light)' : 'var(--surface)' }}
+    >
+      <span className="font-sans text-xs font-600 uppercase tracking-widest" style={{ color: accent ? 'var(--accent)' : 'var(--muted)' }}>{label}</span>
+      <span className="font-display font-bold text-lg leading-tight" style={{ color: accent ? 'var(--accent)' : 'var(--ink)' }}>{value}</span>
+      {sub && <span className="font-sans text-xs truncate" style={{ color: 'var(--muted)' }}>{sub}</span>}
+    </div>
+  )
+}
+
 // ── Budget Tab ─────────────────────────────────────────────────────────────────
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null
   const d = payload[0]
+  const pct = ((d.value / d.payload.total) * 100).toFixed(1)
   return (
-    <div className="card px-3 py-2" style={{ minWidth: 180 }}>
-      <p className="font-sans text-xs font-600 mb-0.5" style={{ color: 'var(--muted)' }}>{d.payload.item}</p>
-      <p className="font-mono text-sm font-bold" style={{ color: 'var(--accent)' }}>
+    <div className="card px-3 py-2.5" style={{ minWidth: 200, boxShadow: '0 4px 16px rgba(0,0,0,0.10)' }}>
+      <p className="font-sans text-xs mb-1" style={{ color: 'var(--muted)' }}>{d.payload.item}</p>
+      <p className="font-mono text-base font-bold" style={{ color: 'var(--accent)' }}>
         ${Number(d.value).toFixed(2)}
       </p>
+      <p className="font-sans text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{pct}% of total</p>
     </div>
   )
 }
 
 function BudgetTab({ budget, totalBudget, question, onCorrection }) {
-  const [local, setLocal] = useState(budget)
+  const [local, setLocal]       = useState(budget)
+  const [highlighted, setHighlighted] = useState(null)
+
+  // Attach total to each entry for tooltip %
+  const chartData = local.map(r => ({ ...r, total: totalBudget }))
+  const largest   = [...local].sort((a, b) => b.cost - a.cost)[0]
 
   return (
-    <div className="flex flex-col gap-6">
-      <div style={{ height: 260 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie data={local} cx="50%" cy="50%" innerRadius={68} outerRadius={108} paddingAngle={2} dataKey="cost" nameKey="item">
-              {local.map((_, i) => (
-                <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} stroke="white" strokeWidth={2} />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomTooltip />} />
-          </PieChart>
-        </ResponsiveContainer>
+    <div className="flex flex-col gap-5">
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-3">
+        <SummaryCard
+          label="Total Budget"
+          value={`$${Number(totalBudget).toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+          accent
+        />
+        <SummaryCard label="Line Items"   value={local.length} />
+        <SummaryCard label="Largest Cost" value={largest ? `$${Number(largest.cost).toFixed(2)}` : '—'} sub={largest?.item} />
       </div>
 
-      <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ borderBottom: '2px solid var(--border)' }}>
-            <th className="font-sans font-600 text-xs uppercase tracking-widest pb-2 text-left pr-4" style={{ color: 'var(--muted)' }}>Line Item</th>
-            <th className="font-sans font-600 text-xs uppercase tracking-widest pb-2 text-right" style={{ color: 'var(--muted)' }}>Cost (USD)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {local.map((row, i) => (
-            <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
-              <td className="py-2 pr-4">
-                <InlineEdit
-                  originalText={`${row.item} — $${Number(row.cost).toFixed(2)}`}
-                  question={question}
-                  category="budget"
-                  itemLabel={row.item}
-                  onSaved={(corrected) => {
-                    const updated = [...local]
-                    const parts = corrected.split('—')
-                    updated[i] = { ...updated[i], item: parts[0]?.trim() || row.item }
-                    setLocal(updated)
-                    onCorrection()
+      {/* Chart + legend side by side */}
+      <div className="card px-4 py-4 flex flex-col gap-4">
+        <p className="font-sans text-xs font-600 uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+          Cost Breakdown
+        </p>
+        <div className="flex items-center gap-4">
+          {/* Donut */}
+          <div style={{ width: 180, height: 180, flexShrink: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  cx="50%" cy="50%"
+                  innerRadius={52} outerRadius={82}
+                  paddingAngle={2}
+                  dataKey="cost"
+                  onMouseEnter={(_, i) => setHighlighted(i)}
+                  onMouseLeave={() => setHighlighted(null)}
+                >
+                  {chartData.map((_, i) => (
+                    <Cell
+                      key={i}
+                      fill={CHART_COLORS[i % CHART_COLORS.length]}
+                      stroke="white"
+                      strokeWidth={2}
+                      opacity={highlighted === null || highlighted === i ? 1 : 0.35}
+                      style={{ cursor: 'pointer', transition: 'opacity 0.15s' }}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Legend */}
+          <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+            {local.map((row, i) => {
+              const pct = ((row.cost / totalBudget) * 100).toFixed(1)
+              return (
+                <div
+                  key={i}
+                  className="flex items-center gap-2"
+                  onMouseEnter={() => setHighlighted(i)}
+                  onMouseLeave={() => setHighlighted(null)}
+                  style={{
+                    opacity: highlighted === null || highlighted === i ? 1 : 0.4,
+                    transition: 'opacity 0.15s',
+                    cursor: 'default',
                   }}
                 >
-                  <span className="font-sans text-sm" style={{ color: 'var(--body)' }}>
+                  <span
+                    className="flex-shrink-0 w-2.5 h-2.5 rounded-sm"
+                    style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
+                  />
+                  <span className="font-sans text-xs flex-1 truncate" style={{ color: 'var(--body)' }}>{row.item}</span>
+                  <span className="font-mono text-xs flex-shrink-0" style={{ color: 'var(--muted)' }}>{pct}%</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Line items */}
+      <div className="card overflow-hidden">
+        <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+          <p className="font-sans text-xs font-600 uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Line Items</p>
+          <p className="font-sans text-xs" style={{ color: 'var(--muted)' }}>Hover to suggest a correction</p>
+        </div>
+        {local.map((row, i) => {
+          const pct = (row.cost / totalBudget) * 100
+          return (
+            <InlineEdit
+              key={i}
+              originalText={`${row.item} — $${Number(row.cost).toFixed(2)}`}
+              question={question}
+              category="budget"
+              itemLabel={row.item}
+              onSaved={(corrected) => {
+                const updated = [...local]
+                const parts = corrected.split('—')
+                updated[i] = { ...updated[i], item: parts[0]?.trim() || row.item }
+                setLocal(updated)
+                onCorrection()
+              }}
+            >
+              <div
+                className="px-4 py-3 flex flex-col gap-1.5"
+                style={{ borderBottom: i < local.length - 1 ? '1px solid var(--border)' : 'none' }}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
                     <span
-                      className="inline-block w-2.5 h-2.5 rounded-sm mr-2 align-middle"
+                      className="flex-shrink-0 w-2 h-2 rounded-full"
                       style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
                     />
-                    {row.item}
+                    <span className="font-sans text-sm truncate" style={{ color: 'var(--ink)' }}>{row.item}</span>
+                  </div>
+                  <span className="font-mono text-sm font-semibold flex-shrink-0" style={{ color: 'var(--ink)' }}>
+                    ${Number(row.cost).toFixed(2)}
                   </span>
-                </InlineEdit>
-              </td>
-              <td className="py-2 font-mono text-sm text-right font-medium" style={{ color: 'var(--ink)' }}>
-                ${Number(row.cost).toFixed(2)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr style={{ borderTop: '2px solid var(--border)' }}>
-            <td className="pt-3 font-sans font-bold text-sm uppercase tracking-wide" style={{ color: 'var(--ink)' }}>Total</td>
-            <td className="pt-3 font-mono font-bold text-base text-right" style={{ color: 'var(--accent)' }}>
-              ${Number(totalBudget).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+                </div>
+                {/* Progress bar */}
+                <div className="w-full rounded-full overflow-hidden" style={{ height: 3, background: 'var(--border)' }}>
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${pct}%`,
+                      background: CHART_COLORS[i % CHART_COLORS.length],
+                      transition: 'width 0.4s ease',
+                    }}
+                  />
+                </div>
+              </div>
+            </InlineEdit>
+          )
+        })}
+
+        {/* Total row */}
+        <div className="px-4 py-3 flex items-center justify-between border-t" style={{ borderColor: 'var(--border)', background: 'var(--surface2)' }}>
+          <span className="font-sans font-bold text-sm" style={{ color: 'var(--ink)' }}>Total</span>
+          <span className="font-mono font-bold text-base" style={{ color: 'var(--accent)' }}>
+            ${Number(totalBudget).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </span>
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,5 +1,74 @@
 import { useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
+
+
+function PlanGeneratingOverlay({ stage, progress }) {
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(248,250,252,0.92)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        gap: 32,
+      }}
+    >
+      {/* Animated beaker icon */}
+      <div style={{ position: 'relative', width: 64, height: 64 }}>
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 3h6M9 3v7l-5 9a1 1 0 00.9 1.5h12.2A1 1 0 0018 19l-5-9V3"/>
+          <path d="M6.5 17.5s1-.5 2.5-.5 2.5.5 4 .5 2.5-.5 2.5-.5" stroke="var(--teal)" strokeWidth="1.2"/>
+        </svg>
+        <div style={{
+          position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+          width: 6, height: 6, borderRadius: '50%',
+          background: 'var(--accent)',
+          animation: 'bounce 1s ease-in-out infinite',
+        }} />
+      </div>
+
+      <div style={{ textAlign: 'center', maxWidth: 380 }}>
+        <h2 className="font-display text-2xl font-bold mb-2" style={{ color: 'var(--ink)' }}>
+          Generating Your Experiment Plan
+        </h2>
+        <p className="font-sans text-sm" style={{ color: 'var(--muted)', minHeight: 20, transition: 'all 0.4s' }}>
+          {stage || 'Initialising…'}
+        </p>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ height: 6, background: 'var(--border)', borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            width: `${progress}%`,
+            background: 'linear-gradient(90deg, var(--accent), var(--teal))',
+            borderRadius: 99,
+            transition: 'width 0.5s ease',
+          }} />
+        </div>
+        <div className="flex justify-end">
+          <span className="font-mono text-xs" style={{ color: 'var(--muted)' }}>
+            {Math.round(progress)}%
+          </span>
+        </div>
+      </div>
+
+      <p className="font-sans text-xs" style={{ color: 'var(--muted)', opacity: 0.7 }}>
+        This typically takes 30–60 seconds
+      </p>
+
+      <style>{`
+        @keyframes bounce {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(-6px); }
+        }
+      `}</style>
+    </div>
+  )
+}
 
 const NOVELTY_CONFIG = {
   'not found': {
@@ -36,8 +105,10 @@ export default function QCPage() {
   const location  = useLocation()
   const { qcResult, question } = location.state || {}
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
+  const [stage, setStage]       = useState('')
+  const [progress, setProgress] = useState(0)
 
   if (!qcResult || !question) {
     return (
@@ -55,8 +126,10 @@ export default function QCPage() {
   const handleProceed = async () => {
     setLoading(true)
     setError('')
+    setStage('')
+    setProgress(0)
     try {
-      const res = await fetch('/generate-plan', {
+      const res = await fetch('http://localhost:8000/generate-plan/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -66,8 +139,31 @@ export default function QCPage() {
         }),
       })
       if (!res.ok) throw new Error(`Server error ${res.status}`)
-      const plan = await res.json()
-      navigate('/plan', { state: { plan, question } })
+
+      const reader  = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer    = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() // keep incomplete line
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const data = JSON.parse(line.slice(6))
+          if (data.stage === 'error') throw new Error(data.message)
+          if (data.stage === 'done') {
+            navigate('/plan', { state: { plan: data.plan, question } })
+            return
+          }
+          flushSync(() => {
+            setStage(data.stage)
+            setProgress(data.pct)
+          })
+        }
+      }
     } catch (err) {
       setError(err.message || 'Failed to generate plan.')
       setLoading(false)
@@ -76,7 +172,7 @@ export default function QCPage() {
 
   return (
     <div className="dot-bg min-h-screen flex flex-col">
-      {loading && <div className="load-bar" />}
+      {loading && <PlanGeneratingOverlay stage={stage} progress={progress} />}
 
       {/* Top nav */}
       <header className="w-full border-b" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
@@ -184,7 +280,7 @@ export default function QCPage() {
             disabled={loading}
             className="btn-primary w-full py-3.5 rounded text-base"
           >
-            {loading ? 'Generating Experiment Plan — this may take 30–60 seconds…' : 'Proceed to Plan Generation →'}
+            {'Proceed to Plan Generation →'}
           </button>
 
           <p className="font-sans text-xs text-center" style={{ color: 'var(--muted)' }}>

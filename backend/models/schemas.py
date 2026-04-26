@@ -70,8 +70,16 @@ class FeedbackResponse(BaseModel):
     message: str
 
 
+class ProtocolStep(BaseModel):
+    step: str = Field(..., description="The protocol instruction")
+    citations: list[str] = Field(
+        default_factory=list,
+        description="Reference URLs (from the provided references list) that ground this step",
+    )
+
+
 class ExperimentPlan(BaseModel):
-    protocol: list[str] = Field(..., description="Ordered step-by-step instructions")
+    protocol: list[ProtocolStep] = Field(..., description="Ordered step-by-step instructions with citations")
     materials: list[Material]
     budget: list[BudgetLine]
     total_budget: float
@@ -79,3 +87,20 @@ class ExperimentPlan(BaseModel):
     validation: list[ValidationCriterion] = Field(
         ..., description="How success or failure of the experiment will be measured"
     )
+
+
+# ── Staged generation sub-models ──────────────────────────────────────────────
+
+class ProtocolOnly(BaseModel):
+    protocol: list[ProtocolStep] = Field(..., description="Ordered step-by-step protocol instructions (8-15 steps) with reference citations")
+
+
+class MaterialsOnly(BaseModel):
+    materials: list[Material]
+
+
+class BudgetTimelineValidation(BaseModel):
+    budget: list[BudgetLine]
+    total_budget: float
+    timeline: list[TimelinePhase]
+    validation: list[ValidationCriterion]
