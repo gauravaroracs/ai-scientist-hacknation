@@ -1,19 +1,25 @@
 """
-Literature QC service — domain-restricted Tavily search + novelty classification.
+Literature QC service — Semantic Scholar search + OpenAI novelty classification.
 """
+import json
 import os
-from langchain_community.tools.tavily_search import TavilySearchResults
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 
-TARGET_DOMAINS = [
-    "nature.com/nprot",
-    "protocols.io",
-    "jove.com",
-    "bio-protocol.org",
-    "openwetware.org",
+SEMANTIC_SCHOLAR_API_URL = "https://api.semanticscholar.org/graph/v1/paper/search"
+SEMANTIC_SCHOLAR_FIELDS = [
+    "title",
+    "url",
+    "abstract",
+    "year",
+    "venue",
+    "citationCount",
 ]
 
 NOVELTY_PROMPT = ChatPromptTemplate.from_messages(
@@ -22,10 +28,10 @@ NOVELTY_PROMPT = ChatPromptTemplate.from_messages(
             "system",
             (
                 "You are a scientific literature analyst. Given a research question and "
-                "search results from protocol/methods databases, classify the novelty:\n"
-                "- 'exact match found': a protocol for this exact question exists\n"
-                "- 'similar work exists': related or adjacent protocols exist\n"
-                "- 'not found': no relevant protocols found\n"
+                "scholarly search results, classify the novelty:\n"
+                "- 'exact match found': papers describe this exact experiment or protocol\n"
+                "- 'similar work exists': related or adjacent papers/protocols exist\n"
+                "- 'not found': no relevant scholarly work found\n"
                 "Reply with ONLY one of those three phrases, nothing else."
             ),
         ),
@@ -37,12 +43,39 @@ NOVELTY_PROMPT = ChatPromptTemplate.from_messages(
 )
 
 
-def _build_searcher() -> TavilySearchResults:
-    return TavilySearchResults(
-        max_results=5,
-        include_domains=TARGET_DOMAINS,
-        include_answer=True,
+def _search_semantic_scholar(question: str) -> list[dict]:
+    api_key = os.getenv("SEMANTIC_SCHOLAR_API_KEY")
+    if not api_key:
+        raise RuntimeError("SEMANTIC_SCHOLAR_API_KEY is not configured.")
+
+    params = urlencode(
+        {
+            "query": question,
+            "limit": 5,
+            "fields": ",".join(SEMANTIC_SCHOLAR_FIELDS),
+        }
     )
+    request = Request(
+        f"{SEMANTIC_SCHOLAR_API_URL}?{params}",
+        headers={
+            "x-api-key": api_key,
+            "Accept": "application/json",
+        },
+        method="GET",
+    )
+
+    try:
+        with urlopen(request, timeout=20) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(
+            f"Semantic Scholar request failed with status {exc.code}: {detail}"
+        ) from exc
+    except URLError as exc:
+        raise RuntimeError(f"Semantic Scholar request failed: {exc.reason}") from exc
+
+    return payload.get("data", [])
 
 
 def _build_classifier() -> object:
@@ -59,12 +92,16 @@ def run_literature_qc(question: str) -> dict:
             "context_summary": "...",
         }
     """
-    searcher = _build_searcher()
-    results: list[dict] = searcher.invoke(question)
+    results = _search_semantic_scholar(question)
 
     references = [r["url"] for r in results if r.get("url")][:3]
     snippets = "\n".join(
-        f"- {r.get('title', '')}: {r.get('content', '')[:300]}" for r in results
+        (
+            f"- {r.get('title', 'Untitled')} "
+            f"({r.get('year', 'n.d.')}, {r.get('venue', 'Unknown venue')}): "
+            f"{(r.get('abstract') or '')[:300]}"
+        )
+        for r in results
     )
     context_summary = snippets[:1500]  # cap for downstream prompt
 

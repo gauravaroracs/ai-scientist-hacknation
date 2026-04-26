@@ -6,6 +6,8 @@ Stage 2: Generate protocol (GPT call 1)
 Stage 3: Generate materials (GPT call 2)
 Stage 4: Generate budget + timeline + validation (GPT call 3)
 """
+from functools import lru_cache
+
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -157,10 +159,12 @@ _PLAN_PROMPT = ChatPromptTemplate.from_messages([
 ])
 
 
-def generate_experiment_plan(
+@lru_cache(maxsize=256)
+def _generate_cached_plan(
     question: str,
     literature_context: str,
-    references: list[str],
+    references_text: str,
+    corrections_block: str,
 ) -> ExperimentPlan:
     corrections = get_relevant_corrections(question)
     corrections_block = format_corrections_for_prompt(corrections)
