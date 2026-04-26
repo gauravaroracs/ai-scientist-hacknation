@@ -21,6 +21,12 @@ export default defineConfig({
       '/literature-qc': 'http://localhost:8000',
       '/generate-plan': { target: 'http://localhost:8000', changeOrigin: true },
       '/feedback':      'http://localhost:8000',
+      '/chat':          'http://localhost:8000',
+      '/api/chat': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/chat/, '/chat'),
+      },
     },
   },
 })

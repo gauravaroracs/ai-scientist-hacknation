@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers.literature_qc import router as literature_qc_router
 from routers.generate_plan import router as generate_plan_router
 from routers.feedback import router as feedback_router
+from routers.chat import router as chat_router
 
 app = FastAPI(
     title="The AI Scientist",
@@ -30,6 +31,7 @@ app.add_middleware(
 app.include_router(literature_qc_router)
 app.include_router(generate_plan_router)
 app.include_router(feedback_router)
+app.include_router(chat_router)
 
 
 @app.get("/", tags=["health"])
