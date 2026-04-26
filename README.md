@@ -1,5 +1,5 @@
 # LabAgent
-### From Hypothesis to Runnable Experiment — by Voice or by Click
+### From Hypothesis to Runnable Experiment by Voice and Chat
 
 > Built for Hack-Nation 2026
 
