@@ -1,5 +1,5 @@
-# LabAgent
-### From Hypothesis to Runnable Experiment by Voice and Chat
+# LabProcure
+### From Hypothesis to Runnable Experiment with protocol design and lab procurement via Voice and Chat
 
 > Built for Hack-Nation 2026
 
@@ -7,13 +7,13 @@
 
 ## What It Does
 
-Paste a scientific hypothesis. In under 60 seconds, LabAgent returns a complete, operationally grounded lab experiment plan — with real catalog numbers, USD cost estimates, and a phased timeline. You can also **talk to it** via voice call to ask questions about the literature or the generated protocol in real time.
+Paste a scientific hypothesis. In under 60 seconds, LabProcure returns a complete, operationally grounded lab experiment plan — with real catalog numbers, USD cost estimates, and a phased timeline. You can also **talk to it** via voice call to ask questions about the literature or the generated protocol in real time.
 
 **Three stages:**
 
 1. **Literature QC** — Semantic Scholar paper search + OpenAI novelty classification. Returns a novelty signal (`not found` / `similar work exists` / `exact match found`), up to 8 papers with abstracts, and reference URLs.
 
-2. **Experiment Plan** — GPT-4o with structured output generates:
+2. **Experiment Plan** — OpenAI with structured output generates:
    - Step-by-step protocol (8–15 steps)
    - Materials list with realistic catalog numbers (Sigma-Aldrich, ThermoFisher, etc.)
    - Itemised budget with USD cost estimates (live Tavily price lookups)
@@ -22,7 +22,7 @@ Paste a scientific hypothesis. In under 60 seconds, LabAgent returns a complete,
 
 3. **Feedback Loop** — Every plan section is inline-editable. Corrections are embedded and stored in Supabase. The next similar experiment plan automatically reflects those expert corrections via few-shot prompt injection — no retraining required.
 
-4. **Voice Assistant** — A floating mic button on the Literature QC and Plan pages opens a live voice call powered by ElevenLabs Conversational AI. The agent knows your current papers and protocol, and can call `search_literature` (a client-side tool) to look up new papers mid-conversation.
+4. **Voice Assistant(LabAgent)** — A floating mic button on the Literature QC and Plan pages opens a live voice call powered by ElevenLabs Conversational AI. The agent knows your current papers and protocol, and can call `search_literature` (a client-side tool) to look up new papers mid-conversation.
 
 5. **Material Comparison & Email** — Compare reagent alternatives via Tavily + GPT, and send supplier RFQ emails via Resend — all inside the Plan dashboard.
 
@@ -33,9 +33,9 @@ Paste a scientific hypothesis. In under 60 seconds, LabAgent returns a complete,
 | Layer | Technology |
 |---|---|
 | Backend | FastAPI + Python 3.13 |
-| LLM | GPT-4o / GPT-4o-mini via LangChain + OpenAI |
+| LLM | OpenAI via LangChain + OpenAI |
 | Literature Search | Semantic Scholar API + Tavily fallback |
-| Price Lookups | Tavily web search + GPT extraction |
+| Price Lookups | Tavily web search + LLM extraction |
 | Embeddings | OpenAI `text-embedding-3-small` |
 | Feedback Store | Supabase (PostgreSQL + pgvector) |
 | Voice AI | ElevenLabs Conversational AI (WebSocket, client tools) |
@@ -274,4 +274,4 @@ standard DMSO protocol.
 
 ## License
 
-MIT © 2026 Made with Love ❤️ and lost of Redbull by Nithin Valiyaveedu, Hoi Tung Ma, Gaurav Arora — see [LICENSE](./LICENSE)
+MIT © 2026 Made with Love ❤️ and lot of Redbull by Nithin Valiyaveedu, Hoi Tung Ma, Gaurav Arora — see [LICENSE](./LICENSE)

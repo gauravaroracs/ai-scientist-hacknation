@@ -174,6 +174,16 @@ function PlanGeneratingOverlay({ stage, progress }) {
 }
 
 // ── TaskItem (sidebar paper) ────────────────────────────────────────────────────
+function ExternalLinkIcon({ size = 10 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+      <polyline points="15 3 21 3 21 9"/>
+      <line x1="10" y1="14" x2="21" y2="3"/>
+    </svg>
+  )
+}
+
 function TaskItem({ paper, index, isSelected, onClick }) {
   return (
     <motion.div
@@ -210,6 +220,30 @@ function TaskItem({ paper, index, isSelected, onClick }) {
           ].filter(Boolean).join(' · ')}
         </span>
       </div>
+
+      {/* Open paper link */}
+      {paper.url && (
+        <a
+          href={paper.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          title="Open paper"
+          style={{
+            flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 20, height: 20, borderRadius: 4,
+            color: 'var(--text-muted)',
+            border: '1px solid var(--border-soft)',
+            background: 'var(--bg-surface)',
+            transition: 'color 0.15s, background 0.15s',
+            textDecoration: 'none',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-hover)' }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'var(--bg-surface)' }}
+        >
+          <ExternalLinkIcon size={9} />
+        </a>
+      )}
     </motion.div>
   )
 }
@@ -267,8 +301,9 @@ function TaskSidebar({ papers, selectedIndex, onSelect }) {
 }
 
 // ── Main content (COL 2) ───────────────────────────────────────────────────────
-function MessageThread({ question, qcResult, cfg, loading, error, onProceed, selectedPaper }) {
+function MessageThread({ question, qcResult, cfg, loading, error, onProceed, selectedPaper, allPapers, onSelectPaper }) {
   const paper = selectedPaper
+  const [paperSheetOpen, setPaperSheetOpen] = useState(false)
 
   return (
     <div style={{
@@ -277,6 +312,75 @@ function MessageThread({ question, qcResult, cfg, loading, error, onProceed, sel
       display: 'flex', flexDirection: 'column',
       height: '100%', overflow: 'hidden',
     }}>
+      {/* Mobile paper list — shown only on small screens */}
+      {allPapers?.length > 0 && (
+        <div className="mobile-only" style={{
+          display: 'none', /* overridden by .mobile-only at ≤600px */
+          flexDirection: 'column',
+          borderBottom: '1px solid var(--border-soft)',
+          background: 'var(--bg-base)',
+          flexShrink: 0,
+        }}>
+          {/* Toggle header */}
+          <button
+            onClick={() => setPaperSheetOpen(o => !o)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '8px 14px',
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              width: '100%',
+            }}
+          >
+            <span className="section-label">Papers ({allPapers.length})</span>
+            <svg
+              width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"
+              style={{ transform: paperSheetOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+            >
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+
+          {/* Paper list (collapsed by default) */}
+          {paperSheetOpen && (
+            <div style={{ maxHeight: 240, overflowY: 'auto', padding: '0 4px 6px' }}>
+              {allPapers.map((p, i) => (
+                <div
+                  key={i}
+                  onClick={() => { onSelectPaper(i); setPaperSheetOpen(false); }}
+                  style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 8,
+                    padding: '7px 10px', borderRadius: 6, marginBottom: 2,
+                    background: selectedPaper && selectedPaper.title === p.title ? 'var(--bg-hover)' : 'transparent',
+                    cursor: 'pointer', transition: 'background 0.15s',
+                  }}
+                >
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: 'var(--text-muted)', flexShrink: 0, marginTop: 2 }}>
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.45, letterSpacing: '-0.01em', marginBottom: 2 }}>
+                      {p.title}
+                    </p>
+                    <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: 'var(--text-muted)' }}>
+                      {[p.year, p.venue].filter(Boolean).join(' · ')}
+                    </span>
+                  </div>
+                  {p.url && (
+                    <a
+                      href={p.url} target="_blank" rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 4, border: '1px solid var(--border-soft)', background: 'var(--bg-surface)', color: 'var(--text-muted)', textDecoration: 'none' }}
+                    >
+                      <ExternalLinkIcon size={9} />
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
         <motion.div
           variants={staggerList}
@@ -767,15 +871,19 @@ export default function QCPage() {
           error={error}
           onProceed={handleProceed}
           selectedPaper={selectedPaper}
+          allPapers={papers}
+          onSelectPaper={(i) => setSelectedPaperIdx(prev => prev === i ? null : i)}
         />
 
-        {/* COL 3 — Preview / LitChat */}
-        <PreviewPane
-          question={question}
-          papers={papers}
-          references={qcResult.references}
-          novelty_signal={qcResult.novelty_signal}
-        />
+        {/* COL 3 — Preview / LitChat (hidden on mobile via workspace-col3) */}
+        <div className="workspace-col3" style={{ height: '100%', overflow: 'hidden' }}>
+          <PreviewPane
+            question={question}
+            papers={papers}
+            references={qcResult.references}
+            novelty_signal={qcResult.novelty_signal}
+          />
+        </div>
       </div>
 
       {/* Floating voice call button */}

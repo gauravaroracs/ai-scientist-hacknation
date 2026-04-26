@@ -291,9 +291,16 @@ html, body, #root {
 @media (max-width: 600px) {
   .workspace-grid {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: 1fr;
+  }
+  /* Hide COL 3 panel on mobile — accessible via floating chat/voice buttons */
+  .workspace-col3 {
+    display: none !important;
   }
   .mobile-proceed-bar {
+    display: flex !important;
+  }
+  .mobile-only {
     display: flex !important;
   }
 }

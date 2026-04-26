@@ -243,7 +243,7 @@ function ProtocolSidebar({ steps, activeStep, onSelectStep, correctionCount }) {
 }
 
 // ── COL 2: Tab content ─────────────────────────────────────────────────────────
-const TABS = ['Budget', 'Materials', 'Timeline', 'Validation']
+const TABS = ['Protocol', 'Budget', 'Materials', 'Timeline', 'Validation']
 
 // Budget
 const CustomTooltip = ({ active, payload }) => {
@@ -286,7 +286,7 @@ function BudgetTab({ budget, totalBudget, question, onCorrection, onBudgetChange
       {/* Chart + legend */}
       <div className="card" style={{ padding: '14px 16px' }}>
         <p className="section-label" style={{ marginBottom: 12 }}>Cost Breakdown</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
           <div style={{ width: 160, height: 160, flexShrink: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -303,7 +303,7 @@ function BudgetTab({ budget, totalBudget, question, onCorrection, onBudgetChange
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ flex: 1, minWidth: 120, display: 'flex', flexDirection: 'column', gap: 6 }}>
             {local.map((row, i) => {
               const pct = ((row.cost / totalBudget) * 100).toFixed(1)
               return (
@@ -568,12 +568,75 @@ function ProtocolStep({ step, index, question, onCorrection, storageKey, total, 
   )
 }
 
+// ── COL 2: Protocol tab (inline step list) ─────────────────────────────────────
+function ProtocolTabContent({ steps, onStepChange }) {
+  const stepsArr = (steps || []).map(s => typeof s === 'string' ? s : s.step)
+  if (!stepsArr.length) return <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)' }}>No protocol steps yet.</p>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {stepsArr.map((step, i) => (
+        <button
+          key={i}
+          onClick={() => onStepChange(i)}
+          style={{
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+            padding: '10px 14px', borderRadius: 6,
+            background: 'var(--bg-base)', border: '1px solid var(--border-soft)',
+            cursor: 'pointer', textAlign: 'left', width: '100%',
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-base)'}
+        >
+          <span style={{
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700,
+            width: 22, height: 22, borderRadius: 4, flexShrink: 0, marginTop: 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'var(--bg-surface)', border: '1px solid var(--border-soft)',
+            color: 'var(--text-muted)',
+          }}>
+            {String(i + 1).padStart(2, '0')}
+          </span>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, lineHeight: 1.55, color: 'var(--text-secondary)', letterSpacing: '-0.01em', margin: 0 }}>
+            {step}
+          </p>
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ── COL 2: Main Content ────────────────────────────────────────────────────────
-function MainContent({ plan, question, activeStep, onStepChange, materials, budget, totalBudget, onCorrection, onMaterialsChange, onBudgetChange, onEmailResult, sk, correctionsApplied }) {
-  const [activeTab, setActiveTab] = useState('Budget')
+function MainContent({ plan, question, activeStep, onStepChange, activeTab, onTabChange, materials, budget, totalBudget, onCorrection, onMaterialsChange, onBudgetChange, onEmailResult, sk, correctionsApplied }) {
 
   return (
     <div style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--border-soft)', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      {/* Back bar — visible when viewing a step */}
+      {activeStep !== null && (
+        <div style={{
+          padding: '6px 14px',
+          borderBottom: '1px solid var(--border-soft)',
+          flexShrink: 0,
+          background: 'var(--bg-surface)',
+          display: 'flex', alignItems: 'center', gap: 12,
+        }}>
+          <button
+            onClick={() => { onStepChange(null); onTabChange('Budget') }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif', fontSize: 12, color: 'var(--text-secondary)',
+              padding: '2px 0',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+          >
+            <ArrowLeft size={12} />
+            Back to Overview
+          </button>
+        </div>
+      )}
+
       {/* Step view */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
         <AnimatePresence mode="wait">
@@ -604,17 +667,20 @@ function MainContent({ plan, question, activeStep, onStepChange, materials, budg
                 )}
               </div>
 
-              {/* Tabs */}
-              <div className="tabs-pill-container">
-                {TABS.map(tab => (
-                  <button key={tab} onClick={() => setActiveTab(tab)} className={`tab-pill${activeTab === tab ? ' active' : ''}`}>
-                    {tab}
-                  </button>
-                ))}
+              {/* Tabs — horizontally scrollable on mobile */}
+              <div style={{ overflowX: 'auto', paddingBottom: 2, flexShrink: 0 }}>
+                <div className="tabs-pill-container" style={{ minWidth: 'max-content' }}>
+                  {TABS.map(tab => (
+                    <button key={tab} onClick={() => onTabChange(tab)} className={`tab-pill${activeTab === tab ? ' active' : ''}`}>
+                      {tab}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <AnimatePresence mode="wait">
                 <motion.div key={activeTab} variants={fadeIn} initial="hidden" animate="visible">
+                  {activeTab === 'Protocol'   && <ProtocolTabContent steps={plan.protocol || []} onStepChange={(i) => { onStepChange(i) }} />}
                   {activeTab === 'Budget'     && <BudgetTab     budget={budget} totalBudget={totalBudget} question={question} onCorrection={onCorrection} onBudgetChange={onBudgetChange} />}
                   {activeTab === 'Materials'  && <MaterialsTab  materials={materials} question={question} onCorrection={onCorrection} onEmailResult={onEmailResult} onMaterialsChange={onMaterialsChange} />}
                   {activeTab === 'Timeline'   && <TimelineTab   timeline={plan.timeline || []} question={question} onCorrection={onCorrection} storageKey={sk('timeline')} />}
@@ -768,6 +834,7 @@ export default function PlanPage() {
   const location = useLocation()
   const { plan, question, correctionsApplied = 0 } = location.state || {}
   const [activeStep, setActiveStep]             = useState(null)
+  const [activeTab,  setActiveTab]              = useState('Budget')
   const [correctionCount, setCorrectionCount]   = useState(0)
   const [toast, setToast]                       = useState(null)
 
@@ -808,6 +875,8 @@ export default function PlanPage() {
           question={question}
           activeStep={activeStep}
           onStepChange={setActiveStep}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
           materials={materials}
           budget={budget}
           totalBudget={totalBudget}
@@ -819,13 +888,15 @@ export default function PlanPage() {
           correctionsApplied={correctionsApplied}
         />
 
-        {/* COL 3 — Plan assistant */}
-        <PlanAssistant
-          question={question}
-          plan={{ ...plan, total_budget: totalBudget, materials }}
-          onCorrection={handleCorrection}
-          sk={sk}
-        />
+        {/* COL 3 — Plan assistant (hidden on mobile via workspace-col3; accessible via floating chat/voice) */}
+        <div className="workspace-col3" style={{ height: '100%', overflow: 'hidden' }}>
+          <PlanAssistant
+            question={question}
+            plan={{ ...plan, total_budget: totalBudget, materials }}
+            onCorrection={handleCorrection}
+            sk={sk}
+          />
+        </div>
       </div>
 
       {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
