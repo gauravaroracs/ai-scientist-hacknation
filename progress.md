@@ -12,7 +12,7 @@ a complete, operationally grounded lab experiment plan. Built for the
 Hack-Nation × World Bank Youth Summit Global AI Hackathon 2026, in collaboration
 .
 
-**Live stack:** FastAPI (Python) + React/Vite + Supabase (pgvector) + OpenAI GPT-4o + Tavily
+**Live stack:** FastAPI (Python) + React/Vite + Supabase (pgvector) + OpenAI GPT-4o + Semantic Scholar
 
 ---
 
@@ -28,7 +28,7 @@ React SPA (Vite, port 3000)
     │  POST /feedback
     ▼
 FastAPI Backend (port 8000)
-    ├── /literature-qc  → Tavily search → GPT-4o-mini novelty classifier
+    ├── /literature-qc  → Semantic Scholar search → GPT-4o-mini novelty classifier
     ├── /generate-plan  → Supabase similarity search → GPT-4o structured output
     └── /feedback       → OpenAI embedding → Supabase insert
             │
@@ -49,7 +49,7 @@ FastAPI Backend (port 8000)
 | POST /literature-qc | `backend/routers/literature_qc.py` | ✅ Done |
 | POST /generate-plan | `backend/routers/generate_plan.py` | ✅ Done |
 | POST /feedback | `backend/routers/feedback.py` | ✅ Done |
-| Tavily domain-restricted search | `backend/services/search.py` | ✅ Done |
+| Semantic Scholar literature search | `backend/services/search.py` | ✅ Done |
 | GPT-4o structured plan generation | `backend/services/planner.py` | ✅ Done |
 | Novelty signal classification | `backend/services/search.py` | ✅ Done |
 | Supabase feedback store | `backend/services/feedback.py` | ✅ Done |
@@ -135,16 +135,13 @@ This is the key differentiator. How it works end-to-end:
 
 ---
 
-## Searched Literature Domains
+## Literature Search Source
 
-```python
-TARGET_DOMAINS = [
-    "nature.com/nprot",   # Nature Protocols (methods papers only)
-    "protocols.io",       # Community protocol repository
-    "jove.com",           # Video protocols with transcripts
-    "bio-protocol.org",   # Peer-reviewed protocols
-    "openwetware.org",    # Community lab protocols
-]
+```text
+Semantic Scholar Academic Graph API
+- query-based paper search
+- top 5 papers returned
+- title, URL, abstract, venue, year, citation count used for novelty review
 ```
 
 ---
@@ -167,7 +164,7 @@ TARGET_DOMAINS = [
 
 ```env
 OPENAI_API_KEY        # GPT-4o + text-embedding-3-small
-TAVILY_API_KEY        # Literature search
+SEMANTIC_SCHOLAR_API_KEY  # Literature search
 SUPABASE_URL          # https://xxxx.supabase.co
 SUPABASE_SERVICE_KEY  # service_role key (legacy JWT format, starts with eyJ)
 ```

@@ -23,7 +23,7 @@ export default {
         muted:    '#64748b',
       },
       fontFamily: {
-        display: ['"Lora"', 'Georgia', 'serif'],
+        display: ['"Fraunces"', 'Georgia', 'serif'],
         sans:    ['"Source Sans 3"', 'system-ui', 'sans-serif'],
         mono:    ['"JetBrains Mono"', 'monospace'],
       },

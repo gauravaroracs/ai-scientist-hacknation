@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Literal
 
 
@@ -23,11 +23,23 @@ class GeneratePlanRequest(BaseModel):
 NoveltySignal = Literal["not found", "similar work exists", "exact match found"]
 
 
+class PaperResult(BaseModel):
+    title: str
+    url: str = ""
+    year: str = ""
+    venue: str = ""
+    abstract: str = ""
+    citation_count: int = 0
+
+
 class LiteratureQCResponse(BaseModel):
     novelty_signal: NoveltySignal
     references: list[str] = Field(default_factory=list)
     context_summary: str = Field(
         default="", description="Brief summary of found literature for downstream use"
+    )
+    papers: list[PaperResult] = Field(
+        default_factory=list, description="Structured paper results for UI display"
     )
 
 
@@ -70,8 +82,23 @@ class FeedbackResponse(BaseModel):
     message: str
 
 
+class ProtocolStep(BaseModel):
+    step: str = Field(..., description="The protocol instruction")
+    citations: list[str] = Field(
+        default_factory=list,
+        description="Reference URLs (from the provided references list) that ground this step",
+    )
+
+    @field_validator('citations', mode='before')
+    @classmethod
+    def coerce_citations(cls, v):
+        if isinstance(v, str):
+            return [v] if v.strip() else []
+        return v or []
+
+
 class ExperimentPlan(BaseModel):
-    protocol: list[str] = Field(..., description="Ordered step-by-step instructions")
+    protocol: list[ProtocolStep] = Field(..., description="Ordered step-by-step instructions with citations")
     materials: list[Material]
     budget: list[BudgetLine]
     total_budget: float
@@ -79,3 +106,29 @@ class ExperimentPlan(BaseModel):
     validation: list[ValidationCriterion] = Field(
         ..., description="How success or failure of the experiment will be measured"
     )
+
+
+# ── Staged generation sub-models ──────────────────────────────────────────────
+
+class ProtocolOnly(BaseModel):
+    protocol: list[ProtocolStep] = Field(..., description="Ordered step-by-step protocol instructions (8-15 steps) with reference citations")
+
+
+class MaterialsOnly(BaseModel):
+    materials: list[Material]
+
+
+class OverheadOnly(BaseModel):
+    """LLM-generated non-material costs only (equipment, services, consumables)."""
+    overhead: list[BudgetLine] = Field(
+        ..., description="Additional costs NOT in the materials list: equipment rental, lab services, consumables, safety disposal, etc."
+    )
+    timeline: list[TimelinePhase]
+    validation: list[ValidationCriterion]
+
+
+class BudgetTimelineValidation(BaseModel):
+    budget: list[BudgetLine]
+    total_budget: float
+    timeline: list[TimelinePhase]
+    validation: list[ValidationCriterion]

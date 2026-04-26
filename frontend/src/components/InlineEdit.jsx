@@ -1,16 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
 
-/**
- * Wraps any content with hover-reveal inline editing.
- *
- * Props:
- *  - children:       rendered content (read mode)
- *  - originalText:   the raw string being corrected
- *  - question:       experiment question (for embedding)
- *  - category:       'protocol' | 'material' | 'budget' | 'timeline' | 'validation'
- *  - itemLabel:      human label, e.g. "Step 3" or "GelMA (Sigma A1978)"
- *  - onSaved:        callback(correctedText) after successful save
- */
 export default function InlineEdit({
   children,
   originalText,
@@ -19,12 +8,12 @@ export default function InlineEdit({
   itemLabel = '',
   onSaved,
 }) {
-  const [hovered, setHovered]     = useState(false)
-  const [editing, setEditing]     = useState(false)
-  const [draft, setDraft]         = useState(originalText)
-  const [comment, setComment]     = useState('')
-  const [saving, setSaving]       = useState(false)
-  const [saved, setSaved]         = useState(false)
+  const [hovered, setHovered]  = useState(false)
+  const [editing, setEditing]  = useState(false)
+  const [draft, setDraft]      = useState(originalText)
+  const [comment, setComment]  = useState('')
+  const [saving, setSaving]    = useState(false)
+  const [saved, setSaved]      = useState(false)
   const textareaRef = useRef(null)
 
   useEffect(() => {
@@ -47,10 +36,10 @@ export default function InlineEdit({
         body: JSON.stringify({
           experiment_question: question,
           category,
-          item_label: itemLabel,
-          original_text: originalText,
+          item_label:     itemLabel,
+          original_text:  originalText,
           corrected_text: draft.trim(),
-          comment: comment.trim(),
+          comment:        comment.trim(),
         }),
       })
       if (!res.ok) throw new Error('Save failed')
@@ -75,7 +64,7 @@ export default function InlineEdit({
   if (editing) {
     return (
       <div
-        className="flex flex-col gap-2 p-3 rounded"
+        className="flex flex-col gap-2 p-3 rounded-xl"
         style={{ border: '1.5px solid var(--accent)', background: 'var(--accent-light)' }}
       >
         <textarea
@@ -83,29 +72,26 @@ export default function InlineEdit({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           rows={Math.max(3, Math.ceil(draft.length / 80))}
-          className="sci-input p-2 text-sm resize-none"
-          style={{ fontFamily: "'Source Sans 3', sans-serif", lineHeight: 1.6 }}
+          className="sci-input p-2 text-sm resize-none rounded-lg"
+          style={{ fontFamily: "'Source Sans 3', sans-serif", lineHeight: 1.65 }}
         />
         <input
           type="text"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Why this correction? (optional — helps train future plans)"
-          className="sci-input px-3 py-1.5 text-xs"
+          className="sci-input px-3 py-1.5 text-xs rounded-lg"
           style={{ fontFamily: "'Source Sans 3', sans-serif" }}
         />
         <div className="flex gap-2">
           <button
             onClick={handleSave}
             disabled={saving}
-            className="btn-primary px-4 py-1.5 text-xs rounded"
+            className="btn-primary px-4 py-1.5 text-xs rounded-lg"
           >
             {saving ? 'Saving…' : 'Save Correction'}
           </button>
-          <button
-            onClick={handleCancel}
-            className="btn-ghost px-4 py-1.5 text-xs rounded"
-          >
+          <button onClick={handleCancel} className="btn-ghost px-4 py-1.5 text-xs rounded-lg">
             Cancel
           </button>
         </div>
@@ -119,38 +105,41 @@ export default function InlineEdit({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        borderRadius: 4,
-        background: hovered ? '#eff6ff' : 'transparent',
-        outline: hovered ? '1.5px solid #bfdbfe' : '1.5px solid transparent',
+        borderRadius: 8,
+        background: hovered ? 'var(--accent-light)' : 'transparent',
+        outline: hovered ? '1.5px solid var(--accent-mid)' : '1.5px solid transparent',
         transition: 'background 0.15s, outline 0.15s',
-        padding: hovered ? '2px 4px' : '2px 4px',
+        padding: '2px 4px',
       }}
     >
-      {/* Saved flash */}
       {saved && (
         <span
-          className="absolute right-0 top-0 font-sans text-xs px-2 py-0.5 rounded"
-          style={{ background: 'var(--success-light)', color: 'var(--success)', border: '1px solid #6ee7b7', zIndex: 10, whiteSpace: 'nowrap' }}
+          className="absolute right-0 top-0 font-sans text-xs px-2 py-0.5 rounded-md"
+          style={{
+            background: 'var(--success-light)',
+            color: 'var(--success)',
+            border: '1px solid #A7F3D0',
+            zIndex: 10,
+            whiteSpace: 'nowrap',
+          }}
         >
-          ✓ Correction saved
+          ✓ Saved
         </span>
       )}
 
       {children}
 
-      {/* Pencil button */}
       {hovered && !saved && (
         <button
           onClick={() => setEditing(true)}
           title="Suggest a correction"
           style={{
             position: 'absolute',
-            top: 2,
-            right: 2,
-            background: 'white',
+            top: 2, right: 2,
+            background: 'var(--surface)',
             border: '1px solid var(--border)',
-            borderRadius: 4,
-            padding: '2px 6px',
+            borderRadius: 6,
+            padding: '2px 7px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -159,11 +148,11 @@ export default function InlineEdit({
             fontSize: 11,
             fontFamily: "'Source Sans 3', sans-serif",
             fontWeight: 600,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+            boxShadow: 'var(--shadow-xs)',
             zIndex: 10,
           }}
         >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>

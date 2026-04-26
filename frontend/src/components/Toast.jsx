@@ -16,8 +16,8 @@ export default function Toast({ message, type = 'success', onDone }) {
   }, [])
 
   const colors = type === 'success'
-    ? { bg: '#ecfdf5', border: '#6ee7b7', color: '#059669' }
-    : { bg: '#fef2f2', border: '#fca5a5', color: '#dc2626' }
+    ? { bg: '#ECFDF5', border: '#A7F3D0', color: '#059669' }
+    : { bg: '#FEF2F2', border: '#FECACA', color: '#DC2626' }
 
   return (
     <div
@@ -29,7 +29,7 @@ export default function Toast({ message, type = 'success', onDone }) {
         background: colors.bg,
         border: `1px solid ${colors.border}`,
         color: colors.color,
-        borderRadius: 6,
+        borderRadius: 10,
         padding: '10px 16px',
         fontFamily: "'Source Sans 3', sans-serif",
         fontSize: 14,

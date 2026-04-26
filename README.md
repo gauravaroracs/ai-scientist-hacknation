@@ -11,7 +11,7 @@ Paste a scientific hypothesis. Get back a complete, operationally grounded lab e
 
 **Three stages:**
 
-1. **Literature QC** — domain-restricted search across Nature Protocols, protocols.io, JoVE, Bio-protocol, and OpenWetWare. Returns a novelty signal (`not found` / `similar work exists` / `exact match found`) and up to 3 reference URLs.
+1. **Literature QC** — Semantic Scholar paper search plus OpenAI novelty classification. Returns a novelty signal (`not found` / `similar work exists` / `exact match found`) and up to 3 reference URLs.
 
 2. **Experiment Plan** — GPT-4o with structured output generates:
    - Step-by-step protocol (8–15 steps)
@@ -30,7 +30,7 @@ Paste a scientific hypothesis. Get back a complete, operationally grounded lab e
 |---|---|
 | Backend | FastAPI + Python 3.13 |
 | LLM | GPT-4o via LangChain |
-| Literature Search | Tavily API (domain-restricted) |
+| Literature Search | Semantic Scholar API |
 | Embeddings | OpenAI `text-embedding-3-small` |
 | Feedback Store | Supabase (PostgreSQL + pgvector) |
 | Frontend | React 18 + Vite + Tailwind CSS |
@@ -49,7 +49,7 @@ mvp/
 │   │   ├── generate_plan.py      # POST /generate-plan
 │   │   └── feedback.py           # POST /feedback
 │   ├── services/
-│   │   ├── search.py             # Tavily search + novelty classifier
+│   │   ├── search.py             # Semantic Scholar search + novelty classifier
 │   │   ├── planner.py            # LLM plan generation + correction injection
 │   │   └── feedback.py           # Supabase store + vector similarity search
 │   ├── models/
@@ -81,7 +81,7 @@ mvp/
 - Python 3.11+
 - Node.js 18+
 - [`just`](https://github.com/casey/just) command runner (`brew install just`)
-- API keys for OpenAI and Tavily
+- API keys for OpenAI and Semantic Scholar
 - A free [Supabase](https://supabase.com) project *(for the feedback loop)*
 
 ### 2. Clone and install
@@ -102,7 +102,7 @@ Edit `backend/.env`:
 
 ```env
 OPENAI_API_KEY=sk-...
-TAVILY_API_KEY=tvly-...
+SEMANTIC_SCHOLAR_API_KEY=...
 
 # For the feedback / learning loop (optional but recommended)
 SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
@@ -147,7 +147,7 @@ Returns:
 ```json
 {
   "novelty_signal": "similar work exists",
-  "references": ["https://www.nature.com/nprot/..."],
+  "references": ["https://www.semanticscholar.org/paper/..."],
   "context_summary": "..."
 }
 ```

@@ -8,7 +8,7 @@ router = APIRouter()
 @router.post("/literature-qc", response_model=LiteratureQCResponse)
 async def literature_qc(body: LiteratureQCRequest) -> LiteratureQCResponse:
     """
-    Performs a domain-restricted literature search and classifies novelty.
+    Performs a Semantic Scholar literature search and classifies novelty.
     """
     try:
         result = run_literature_qc(body.question)
