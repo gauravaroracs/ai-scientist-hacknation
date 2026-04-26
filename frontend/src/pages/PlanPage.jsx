@@ -607,30 +607,32 @@ function ProtocolTabContent({ steps, onStepChange }) {
 }
 
 // ── COL 2: Main Content ────────────────────────────────────────────────────────
-function MainContent({ plan, question, activeStep, onStepChange, materials, budget, totalBudget, onCorrection, onMaterialsChange, onBudgetChange, onEmailResult, sk, correctionsApplied }) {
-  const [activeTab, setActiveTab] = useState('Budget')
+function MainContent({ plan, question, activeStep, onStepChange, activeTab, onTabChange, materials, budget, totalBudget, onCorrection, onMaterialsChange, onBudgetChange, onEmailResult, sk, correctionsApplied }) {
 
   return (
     <div style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--border-soft)', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      {/* Mobile back bar — visible only when viewing a step on small screens */}
+      {/* Back bar — visible when viewing a step */}
       {activeStep !== null && (
-        <div className="mobile-only" style={{
-          display: 'none',
-          padding: '8px 14px',
+        <div style={{
+          padding: '6px 14px',
           borderBottom: '1px solid var(--border-soft)',
           flexShrink: 0,
+          background: 'var(--bg-surface)',
+          display: 'flex', alignItems: 'center', gap: 12,
         }}>
           <button
-            onClick={() => onStepChange(null)}
+            onClick={() => { onStepChange(null); onTabChange('Budget') }}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               background: 'transparent', border: 'none', cursor: 'pointer',
               fontFamily: 'Inter, sans-serif', fontSize: 12, color: 'var(--text-secondary)',
               padding: '2px 0',
             }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
           >
             <ArrowLeft size={12} />
-            Back to Protocol
+            Back to Overview
           </button>
         </div>
       )}
@@ -669,7 +671,7 @@ function MainContent({ plan, question, activeStep, onStepChange, materials, budg
               <div style={{ overflowX: 'auto', paddingBottom: 2, flexShrink: 0 }}>
                 <div className="tabs-pill-container" style={{ minWidth: 'max-content' }}>
                   {TABS.map(tab => (
-                    <button key={tab} onClick={() => setActiveTab(tab)} className={`tab-pill${activeTab === tab ? ' active' : ''}`}>
+                    <button key={tab} onClick={() => onTabChange(tab)} className={`tab-pill${activeTab === tab ? ' active' : ''}`}>
                       {tab}
                     </button>
                   ))}
@@ -678,7 +680,7 @@ function MainContent({ plan, question, activeStep, onStepChange, materials, budg
 
               <AnimatePresence mode="wait">
                 <motion.div key={activeTab} variants={fadeIn} initial="hidden" animate="visible">
-                  {activeTab === 'Protocol'   && <ProtocolTabContent steps={plan.protocol || []} onStepChange={onStepChange} />}
+                  {activeTab === 'Protocol'   && <ProtocolTabContent steps={plan.protocol || []} onStepChange={(i) => { onStepChange(i) }} />}
                   {activeTab === 'Budget'     && <BudgetTab     budget={budget} totalBudget={totalBudget} question={question} onCorrection={onCorrection} onBudgetChange={onBudgetChange} />}
                   {activeTab === 'Materials'  && <MaterialsTab  materials={materials} question={question} onCorrection={onCorrection} onEmailResult={onEmailResult} onMaterialsChange={onMaterialsChange} />}
                   {activeTab === 'Timeline'   && <TimelineTab   timeline={plan.timeline || []} question={question} onCorrection={onCorrection} storageKey={sk('timeline')} />}
@@ -832,6 +834,7 @@ export default function PlanPage() {
   const location = useLocation()
   const { plan, question, correctionsApplied = 0 } = location.state || {}
   const [activeStep, setActiveStep]             = useState(null)
+  const [activeTab,  setActiveTab]              = useState('Budget')
   const [correctionCount, setCorrectionCount]   = useState(0)
   const [toast, setToast]                       = useState(null)
 
@@ -872,6 +875,8 @@ export default function PlanPage() {
           question={question}
           activeStep={activeStep}
           onStepChange={setActiveStep}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
           materials={materials}
           budget={budget}
           totalBudget={totalBudget}
