@@ -2,6 +2,8 @@
 Experiment plan generation service using LLM with structured output.
 Injects relevant past expert corrections via few-shot prompting.
 """
+from functools import lru_cache
+
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -37,6 +39,34 @@ HUMAN_TEMPLATE = (
 )
 
 
+@lru_cache(maxsize=256)
+def _generate_cached_plan(
+    question: str,
+    literature_context: str,
+    references_text: str,
+    corrections_block: str,
+) -> ExperimentPlan:
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", SYSTEM_BASE),
+            ("human", HUMAN_TEMPLATE),
+        ]
+    )
+
+    # Keep generation deterministic for identical inputs.
+    llm = ChatOpenAI(model="gpt-4o", temperature=0)
+    chain = prompt | llm.with_structured_output(ExperimentPlan)
+
+    return chain.invoke(
+        {
+            "question": question,
+            "literature_context": literature_context,
+            "references": references_text,
+            "corrections_block": corrections_block,
+        }
+    )
+
+
 def generate_experiment_plan(
     question: str,
     literature_context: str,
@@ -46,25 +76,13 @@ def generate_experiment_plan(
     corrections = get_relevant_corrections(question)
     corrections_block = format_corrections_for_prompt(corrections)
 
-    # ── Build prompt ───────────────────────────────────────────────────────
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", SYSTEM_BASE),
-            ("human", HUMAN_TEMPLATE),
-        ]
-    )
-
-    llm = ChatOpenAI(model="gpt-4o", temperature=0.3)
-    chain = prompt | llm.with_structured_output(ExperimentPlan)
-
     refs_text = "\n".join(f"- {url}" for url in references) if references else "None"
+    normalized_context = literature_context or "No prior literature found."
 
-    result: ExperimentPlan = chain.invoke(
-        {
-            "question": question,
-            "literature_context": literature_context or "No prior literature found.",
-            "references": refs_text,
-            "corrections_block": corrections_block,
-        }
+    result = _generate_cached_plan(
+        question=question,
+        literature_context=normalized_context,
+        references_text=refs_text,
+        corrections_block=corrections_block,
     )
     return result
