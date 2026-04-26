@@ -11,6 +11,7 @@ import InlineEdit from '../components/InlineEdit'
 import Toast from '../components/Toast'
 import ProductComparison from '../components/ProductComparison'
 import GuideTooltip from '../components/GuideTooltip'
+import VoiceCall from '../components/VoiceCall'
 
 // ── Markdown renderer ─────────────────────────────────────────────────────────
 const MD_COMPONENTS = {
@@ -645,10 +646,7 @@ const PLAN_SUGGESTIONS = [
   'How long does each step take?',
 ]
 
-const RIGHT_TABS = ['Chat', 'Budget', 'Materials', 'Timeline', 'Validation']
-
-function PlanAssistant({ question, plan, materials, budget, totalBudget, onCorrection, onMaterialsChange, onBudgetChange, onEmailResult, sk }) {
-  const [activeTab, setActiveTab] = useState('Chat')
+function PlanAssistant({ question, plan, onCorrection, sk }) {
 
   // Chat state
   const [inputValue, setInputValue] = useState('')
@@ -671,41 +669,20 @@ function PlanAssistant({ question, plan, materials, budget, totalBudget, onCorre
 
   return (
     <div style={{ background: '#ffffff', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      {/* Tab bar */}
-      <div style={{ borderBottom: '1px solid var(--border-soft)', background: 'var(--bg-surface)', flexShrink: 0, padding: '0 12px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 0 }}>
-          {RIGHT_TABS.map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: activeTab === tab ? 600 : 400,
-                color: activeTab === tab ? 'var(--text-primary)' : 'var(--text-muted)',
-                padding: '8px 14px',
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                borderBottom: activeTab === tab ? '2px solid var(--text-primary)' : '2px solid transparent',
-                marginBottom: -1,
-                transition: 'color 0.15s',
-                display: 'flex', alignItems: 'center', gap: 5,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {tab === 'Chat' && isLoading && activeTab === 'Chat' && (
-                <motion.span animate={spinnerRotate.animate} style={{ display: 'inline-flex' }}>
-                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                </motion.span>
-              )}
-              {tab}
-            </button>
-          ))}
-        </div>
+      {/* Header */}
+      <div style={{ borderBottom: '1px solid var(--border-soft)', background: 'var(--bg-surface)', flexShrink: 0, padding: '0 14px', height: 36, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+          Plan Assistant
+        </span>
+        {isLoading && (
+          <motion.span animate={spinnerRotate.animate} style={{ display: 'inline-flex', color: 'var(--text-muted)' }}>
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          </motion.span>
+        )}
       </div>
 
-      {/* Content */}
-      <AnimatePresence mode="wait">
-        {activeTab === 'Chat' ? (
-          <motion.div key="chat" variants={fadeIn} initial="hidden" animate="visible"
-            style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Chat */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {/* Messages */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {messages.length === 0 ? (
@@ -753,17 +730,7 @@ function PlanAssistant({ question, plan, materials, budget, totalBudget, onCorre
                 <SendIcon size={11} />
               </motion.button>
             </form>
-          </motion.div>
-        ) : (
-          <motion.div key={activeTab} variants={fadeIn} initial="hidden" animate="visible"
-            style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
-            {activeTab === 'Budget'     && <BudgetTab     budget={budget} totalBudget={totalBudget} question={question} onCorrection={onCorrection} onBudgetChange={onBudgetChange} />}
-            {activeTab === 'Materials'  && <MaterialsTab  materials={materials} question={question} onCorrection={onCorrection} onEmailResult={onEmailResult} onMaterialsChange={onMaterialsChange} />}
-            {activeTab === 'Timeline'   && <TimelineTab   timeline={plan?.timeline || []} question={question} onCorrection={onCorrection} storageKey={sk('timeline')} />}
-            {activeTab === 'Validation' && <ValidationTab validation={plan?.validation || []} question={question} onCorrection={onCorrection} storageKey={sk('validation')} />}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </div>
     </div>
   )
 }
@@ -775,7 +742,7 @@ function TopNav({ question }) {
       <div style={{ height: 40, padding: '0 16px', display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', whiteSpace: 'nowrap' }}>
         <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none', color: 'var(--text-primary)', flexShrink: 0 }}>
           <FlaskIcon size={13} />
-          <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: 13, letterSpacing: '-0.02em' }}>The AI Scientist</span>
+          <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: 13, letterSpacing: '-0.02em' }}>LabProcure</span>
         </Link>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
         <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)', flexShrink: 0 }}>Literature QC</span>
@@ -856,18 +823,23 @@ export default function PlanPage() {
         <PlanAssistant
           question={question}
           plan={{ ...plan, total_budget: totalBudget, materials }}
-          materials={materials}
-          budget={budget}
-          totalBudget={totalBudget}
           onCorrection={handleCorrection}
-          onMaterialsChange={handleMaterialsChange}
-          onBudgetChange={setBudget}
-          onEmailResult={(ok, msg) => setToast({ message: msg, type: ok ? 'success' : 'error' })}
           sk={sk}
         />
       </div>
 
       {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
+
+      {/* Floating voice call button */}
+      <VoiceCall
+        context={{
+          question,
+          protocol: plan.protocol || [],
+          materials,
+          timeline: plan.timeline || [],
+          total_budget: totalBudget,
+        }}
+      />
     </motion.div>
   )
 }

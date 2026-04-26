@@ -225,10 +225,10 @@ export default function InputPage() {
       </motion.main>
 
       {/* Footer */}
-      <footer style={{ borderTop: '1px solid var(--border-soft)', background: 'var(--bg-surface)', padding: '12px 24px' }}>
+      <footer style={{ borderTop: '1px solid var(--border-soft)', background: 'var(--bg-surface)', padding: '10px 24px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', justifyContent: 'center' }}>
           <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: 'var(--text-muted)' }}>
-            Hack-Nation × World Bank Youth Summit · Global AI Hackathon 2026
+            © 2026 LabProcure
           </span>
         </div>
       </footer>

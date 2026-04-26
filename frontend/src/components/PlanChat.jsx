@@ -48,7 +48,7 @@ function ChatUI({ question, plan }) {
       {/* Floating toggle button — always visible */}
       <button
         onClick={() => setOpen(o => !o)}
-        title="Ask the AI Scientist"
+        title="Ask LabAgent"
         style={{
           position: 'fixed',
           bottom: 28, right: 28,

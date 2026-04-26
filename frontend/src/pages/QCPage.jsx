@@ -8,6 +8,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { pageTransition, fadeUp, staggerList, slideInLeft, fadeIn, spinnerRotate } from '../lib/animations'
 import GuideTooltip from '../components/GuideTooltip'
+import VoiceCall from '../components/VoiceCall'
 
 // ── Markdown renderer ────────────────────────────────��────────────────────────
 const MD_COMPONENTS = {
@@ -484,7 +485,7 @@ function PreviewPane({ question, papers, references, novelty_signal }) {
   const transportRef = useRef(new TextStreamChatTransport({ api: '/api/chat' }))
   const { messages, sendMessage, status } = useChat({ transport: transportRef.current })
   const isLoading = status === 'streaming' || status === 'submitted'
-  const [url, setUrl] = useState('ai-scientist://literature-qa')
+  const [url, setUrl] = useState('labagent://literature-qa')
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -666,7 +667,7 @@ function TopNav() {
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', color: 'var(--text-primary)' }}>
           <FlaskIcon size={13} />
           <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: 13, letterSpacing: '-0.02em' }}>
-            The AI Scientist
+            LabProcure
           </span>
         </Link>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2">
@@ -776,6 +777,19 @@ export default function QCPage() {
           novelty_signal={qcResult.novelty_signal}
         />
       </div>
+
+      {/* Floating voice call button */}
+      <VoiceCall
+        context={{
+          question,
+          novelty_signal: qcResult.novelty_signal,
+          references: qcResult.references || [],
+          papers: papers.map(p => ({
+            title: p.title, year: p.year, venue: p.venue,
+            citation_count: p.citation_count, abstract: p.abstract,
+          })),
+        }}
+      />
 
       {/* Mobile-only sticky footer with Generate button */}
       <div className="mobile-proceed-bar" style={{
