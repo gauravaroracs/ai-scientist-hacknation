@@ -3,6 +3,8 @@
 
 > Built for Hack-Nation 2026
 
+Live demo: https://lab-procure.vercel.app/
+
 ---
 
 ## What It Does
